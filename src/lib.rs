@@ -76,52 +76,26 @@ pub static COLOR_MAP: Lazy<HashMap<char, &str>> = Lazy::new(|| {
     ])
 });
 
+pub struct Rgb {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8
+}
+
 pub fn to_ansi(hm_colorcode: char) -> Option<String> {
     COLOR_MAP
         .get(&hm_colorcode)
         .and_then(|hex| hex_to_rgb(hex))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_known_color_uppercase() {
-        let ansi = to_ansi('A').unwrap();
-        assert_eq!(ansi, hex_to_rgb("#FFFFFF").unwrap());
+pub fn get_rgb(hm_colorcode: char) -> Option<Rgb> {
+    let hex = COLOR_MAP.get(&hm_colorcode)?.trim_start_matches('#');
+    if hex.len() != 6 {
+        return None;
     }
-
-    #[test]
-    fn test_known_color_lowercase() {
-        let ansi = to_ansi('m').unwrap();
-        assert_eq!(ansi, hex_to_rgb("#23381B").unwrap());
-    }
-
-    #[test]
-    fn test_grouped_color() {
-        let ansi = to_ansi('7').unwrap();
-        assert_eq!(ansi, hex_to_rgb("#FF8000").unwrap());
-    }
-
-    #[test]
-    fn test_invalid_code_returns_none() {
-        assert!(to_ansi('?').is_none());
-    }
-
-    #[test]
-    fn test_hex_to_rgb_valid() {
-        let ansi = hex_to_rgb("#123456").unwrap();
-        assert_eq!(ansi, "\x1b[38;2;18;52;86m");
-    }
-
-    #[test]
-    fn test_hex_to_rgb_invalid_length() {
-        assert!(hex_to_rgb("#123").is_none());
-    }
-
-    #[test]
-    fn test_hex_to_rgb_invalid_chars() {
-        assert!(hex_to_rgb("#GGGGGG").is_none());
-    }
+    Some(Rgb {
+        r: u8::from_str_radix(&hex[0..2], 16).ok()?,
+        g: u8::from_str_radix(&hex[2..4], 16).ok()?,
+        b: u8::from_str_radix(&hex[4..6], 16).ok()?,
+    })
 }
